@@ -1,0 +1,16 @@
+routes:
+  - path: /
+    controller: Home->home
+    method: GET
+
+  - path: /about/
+    method: GET
+    controller: About->about
+
+  - path: /about/instagram/
+    method: GET
+    controller: About->instagram
+
+  - path: /about/instagram/*
+    method: GET
+    controller: \About\Instagram->instagramParams

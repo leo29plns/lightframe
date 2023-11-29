@@ -1,0 +1,7 @@
+head:
+  title: Hello world!
+  description: This is a test
+
+body:
+  first_h1: This is the first h1
+  p2: This is the paraph 2

@@ -1,0 +1,25 @@
+Options -Indexes
+
+<FilesMatch "^\.env">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+RewriteEngine On
+
+# # Force HTTPS
+# RewriteCond %{HTTP:X-Forwarded-Proto} !https
+# RewriteCond %{HTTPS} off
+# RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# # Add "www." to the domain
+# RewriteCond %{HTTP_HOST} !^www\. [NC]
+# RewriteRule (.*) https://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# If file exists under public/
+RewriteCond %{REQUEST_URI}::$1 ^(.*?/)(.*)::\2
+RewriteCond %{DOCUMENT_ROOT}%1public/%2 -f
+RewriteRule ^(.*)$  public/$1 [END]
+
+# Default rewrite to index.php
+RewriteRule . index.php [END,QSA]
