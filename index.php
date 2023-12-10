@@ -1,24 +1,48 @@
 <?php
 
+# Loads conf.php
+require('conf.php');
+
 # Loads ClassLoader
 require('Classes' . DIRECTORY_SEPARATOR . 'ClassLoader.php');
 use lightframe\ClassLoader;
+
+ClassLoader::load('FunctionLoader.php', 'FunctionLoader');
+ClassLoader::load('LfError.php', 'LfError');
 
 ClassLoader::load('Initialization'. DIRECTORY_SEPARATOR . 'Dotenv.php');
 lightframe\Initialization\Dotenv::load('.env');
 
 # Loads debug() and enables PHP errors
-if ($_ENV['APP_DEBUG'] === 'true') {
+if ($_ENV['LF_DEBUG'] === 'true') {
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
     ClassLoader::load('Initialization'. DIRECTORY_SEPARATOR . 'Debug.php', 'Debug');
 }
 
-# Loads YAML parser
-require('libraries' . DIRECTORY_SEPARATOR . 'Spyc.php');
+# Loads functions
+// FunctionLoader::load('redirect.php');
 
-ClassLoader::load('Parser.php', 'Parser');
-
+# Loads required classes
+ClassLoader::loadLibrary('Spyc.php');
+ClassLoader::load('HtmlBuild/Parser.php', 'Parser');
+ClassLoader::load('HtmlBuild/Template.php', 'Template');
+ClassLoader::load('View.php', 'View');
+ClassLoader::load('PhpToJs.php', 'PhpToJs');
+ClassLoader::load('Fingerprint.php', 'Fingerprint');
+ClassLoader::load('Cookie.php', 'Cookie');
+ClassLoader::load('UserSession.php', 'UserSession');
+ClassLoader::load('Redirect.php', 'Redirect');
 ClassLoader::load('Router.php', 'Router');
-Router::loadController($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+
+# Instantiates session
+$userSession = new UserSession();
+$userSession->start();
+
+# Loads AutoLoader (eg. for components) and register it via spl
+ClassLoader::load('AutoLoader.php');
+spl_autoload_register(['\lightframe\AutoLoader', 'loadClass']);
+
+# Proceed client request
+Router::loadRouteController($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);

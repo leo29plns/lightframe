@@ -4,9 +4,10 @@ namespace lightframe;
 
 class ClassLoader
 {
-    public static function load(string $classpath, string $alias = '') : void {
-        $file = 'Classes' . DIRECTORY_SEPARATOR . $classpath;
-        require_once($file);
+    private static function loadClass(string $classpath, string $alias = '', string $directory = 'Classes') : void
+    {
+        $file = $directory . DIRECTORY_SEPARATOR . $classpath;
+        require($file);
         
         if (!empty($alias)) {
             $fileInfo = pathinfo($file);
@@ -22,17 +23,13 @@ class ClassLoader
         }
     }
 
-    public static function loadAll(string $classdirpath) : void {
-        $files = scandir($classdirpath);
-        
-        foreach ($files as $file) {
-            if ($file !== '.' && $file !== '..') {
-                $classfilepath = $classdirpath . DIRECTORY_SEPARATOR . $file;
-                $classinfo = pathinfo($classfilepath);
-                if (isset($classinfo['extension']) && $classinfo['extension'] === 'php') {
-                    self::load($classfilepath);
-                }
-            }
-        }
+    public static function load(string $classpath, string $alias = '') : void
+    {
+        self::loadClass($classpath, $alias);
+    }
+
+    public static function loadLibrary(string $classpath) : void
+    {
+        self::loadClass($classpath, '', 'libraries');
     }
 }

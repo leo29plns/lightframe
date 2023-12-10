@@ -11,6 +11,7 @@ class Router
     private static $webroot;
 
     public static $uri;
+    public static $locale;
     public static $method;
 
     private static function loadRoutes() : void
@@ -36,20 +37,72 @@ class Router
             }
         }
 
-        return $result['index'] !== null ? $result : null;
+        return ($result['index'] !== null) ? $result : null;
     }
 
-    public static function loadController(string $requestUri, string $requestMethod) : void
+    private static function loadController(string $classpath, string $alias = '', string $directory = 'Controllers') : void
     {
+        $file = $directory . DIRECTORY_SEPARATOR . $classpath;
+        require($file);
+        
+        if (!empty($alias)) {
+            $fileInfo = pathinfo($file);
+
+            $namespace = explode(DIRECTORY_SEPARATOR, $fileInfo['dirname']);
+            array_shift($namespace);
+            $namespace = implode('', $namespace);
+            
+            $dirname = str_replace(DIRECTORY_SEPARATOR, '\\', $namespace);
+            $dirname .= ($dirname !== '') ? '\\' : '';
+            
+            class_alias('lightframe\\Controllers\\' . $dirname . $fileInfo['filename'], $alias);
+        }
+    }
+
+    public static function loadRouteController(string $requestUri, string $requestMethod) : void
+    {
+        $requestUri = parse_url($requestUri, PHP_URL_PATH);
+
         if (substr($requestUri, -1) !== '/') {
             $requestUri .= '/';
         }
 
         self::$webroot = dirname($_SERVER['PHP_SELF']);
+        $_ENV['LF_WEBROOT'] = self::$webroot;
         self::loadRoutes();
 
-        self::$uri = str_replace(self::$webroot, '', $requestUri);
+        $uri = (self::$webroot !== '/') ? substr($requestUri, strlen(self::$webroot)) : $requestUri;
         self::$method = $requestMethod;
+
+        $parts = explode('/', trim($uri, '/'));
+
+        if (isset($parts[0]) && strlen($parts[0]) === 2) {
+            $locale = $parts[0];
+
+            $localesFile = json_decode(file_get_contents('locales/locales.json'), true);
+            $_ENV['LF_LOCALES_FILE'] = $localesFile;
+            
+            $locales = array_map(function ($key) {
+                return $key['code'];
+            }, $localesFile['locales']);
+
+            if (!in_array($locale, $locales)) {
+                $urlWithLocale = self::$webroot . '/' . \LF_DEFAULT_LOCALE . $uri;
+                \Redirect::url($urlWithLocale);
+            }
+            
+            self::$locale = $locale;
+            $_SESSION['LF_LOCALE'] = self::$locale;
+            self::$uri = substr($uri, strlen(self::$locale) + 1);
+        } else {
+            if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+                $locale = substr(explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE'])[0], 0, 2);
+            } else {
+                $locale = \LF_DEFAULT_LOCALE;
+            }
+            $urlWithLocale = self::$webroot . '/' . $locale . $uri;
+            \Redirect::url($urlWithLocale);
+        }
 
         $reconciliation = self::controllerReconciliation();
 
@@ -60,24 +113,12 @@ class Router
             $controller = explode('->', $route['controller']);
             $controllerPath = str_replace('\\', DIRECTORY_SEPARATOR, $controller[0]);
 
-            $file = 'Controllers' . DIRECTORY_SEPARATOR . $controllerPath . '.php';
-            require($file);
-
-            $fileInfo = pathinfo($file);
-
-            $namespace = explode(DIRECTORY_SEPARATOR, $fileInfo['dirname']);
-            array_shift($namespace);
-            $namespace = implode('', $namespace);
+            self::loadController($controllerPath . '.php', self::CLASS_ALIAS . $controller[0]);
             
-            $dirname = str_replace(DIRECTORY_SEPARATOR, '\\', $namespace);
-            $dirname .= ($dirname !== '') ? '\\' : '';
-            
-            class_alias('lightframe\\Controllers\\' . $dirname . $fileInfo['filename'], self::CLASS_ALIAS . $controller[0]);
-
             $controllerInstance = new (self::CLASS_ALIAS . $controller[0]);
             call_user_func([$controllerInstance, $controller[1]], $params);
         } else {
-            \Debug::dump('404 Unknown ' . self::$uri, true);
+            \LfError::exit('page', 'not_found', 404);
         }
     }
 }
