@@ -16,11 +16,6 @@ class LfError
         require('html' . DIRECTORY_SEPARATOR . 'errors' . DIRECTORY_SEPARATOR . 'default.php');
         $html = ob_get_clean();
 
-        // $translation[0] = \Spyc\Spyc::YAMLLoad(file_get_contents('locales' . DIRECTORY_SEPARATOR . $_SESSION['LF_LOCALE'] . DIRECTORY_SEPARATOR . 'errors' . DIRECTORY_SEPARATOR . 'common' . '.yml'));
-        // $translation[1] = \Spyc\Spyc::YAMLLoad(file_get_contents('locales' . DIRECTORY_SEPARATOR . \LF_DEFAULT_LOCALE . DIRECTORY_SEPARATOR . 'errors' . DIRECTORY_SEPARATOR . 'common' . '.yml'));
-        // $translation[2] = \Spyc\Spyc::YAMLLoad(file_get_contents('locales' . DIRECTORY_SEPARATOR . $_SESSION['LF_LOCALE'] . DIRECTORY_SEPARATOR . 'errors' . DIRECTORY_SEPARATOR . $category . '.yml'));
-        // $translation[3] = \Spyc\Spyc::YAMLLoad(file_get_contents('locales' . DIRECTORY_SEPARATOR . \LF_DEFAULT_LOCALE . DIRECTORY_SEPARATOR . 'errors' . DIRECTORY_SEPARATOR . $category . '.yml'));
-
         $localePath = 'locales' . DIRECTORY_SEPARATOR . $_SESSION['LF_LOCALE'] . DIRECTORY_SEPARATOR . 'errors' . DIRECTORY_SEPARATOR;
         $defaultLocalePath = 'locales' . DIRECTORY_SEPARATOR . \LF_DEFAULT_LOCALE . DIRECTORY_SEPARATOR . 'errors' . DIRECTORY_SEPARATOR;
         

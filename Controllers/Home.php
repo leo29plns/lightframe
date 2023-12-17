@@ -10,6 +10,7 @@ class Home
         // $view->setTitle('95');
         $view->phpToJs('test_value', ['1', 2, '34']);
         // $view->setDescription('Bonjour');
+        $view->phpToJs('bonjour', 'Bonjour');
 
         echo $view->render();
     }

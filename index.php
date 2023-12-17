@@ -26,11 +26,15 @@ if ($_ENV['LF_DEBUG'] === 'true') {
 
 # Loads required classes
 ClassLoader::loadLibrary('Spyc.php');
-ClassLoader::load('HtmlBuild/Parser.php', 'Parser');
-ClassLoader::load('HtmlBuild/Template.php', 'Template');
+ClassLoader::load('HtmlBuild' . DIRECTORY_SEPARATOR . 'Parser.php', 'Parser');
+ClassLoader::load('HtmlBuild' . DIRECTORY_SEPARATOR . 'Template.php', 'Template');
+ClassLoader::load('Html' . DIRECTORY_SEPARATOR . 'Async.php', 'Html\Async');
 ClassLoader::load('View.php', 'View');
 ClassLoader::load('PhpToJs.php', 'PhpToJs');
+ClassLoader::load('Random.php', 'Random');
+ClassLoader::load('Token.php', 'Token');
 ClassLoader::load('Fingerprint.php', 'Fingerprint');
+ClassLoader::load('StringSecure.php', 'StringSecure');
 ClassLoader::load('Cookie.php', 'Cookie');
 ClassLoader::load('UserSession.php', 'UserSession');
 ClassLoader::load('Redirect.php', 'Redirect');
@@ -42,7 +46,7 @@ $userSession->start();
 
 # Loads AutoLoader (eg. for components) and register it via spl
 ClassLoader::load('AutoLoader.php');
-spl_autoload_register(['\lightframe\AutoLoader', 'loadClass']);
+spl_autoload_register(['\lightframe\AutoLoader', 'load']);
 
 # Proceed client request
-Router::loadRouteController($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+Router::loadRouteController($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD'], getallheaders());

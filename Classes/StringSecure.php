@@ -52,9 +52,4 @@ class StringSecure
 
         return $plaintext;
     }
-
-    private static function randomize(int $length = 16) : string
-    {
-        return bin2hex(random_bytes($length));
-    }
 }

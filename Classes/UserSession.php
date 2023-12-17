@@ -9,6 +9,7 @@ class UserSession
     public function start() : void
     {
         session_name(self::SESSION_NAME);
+        ini_set('session.gc_maxlifetime', 3600);
         session_start();
 
         if (!isset($_SESSION['LF_BROWSERFINGERPRINT'])) {
@@ -19,6 +20,8 @@ class UserSession
 
             $_SESSION['LF_BROWSERFINGERPRINT'] = $browserFingerprint;
             $_SESSION['LF_TIMESTAMP'] = $now;
+            
+            \Token::generate();
         }
     }
 

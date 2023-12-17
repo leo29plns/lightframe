@@ -4,24 +4,31 @@ namespace lightframe;
 
 class AutoLoader
 {
-    private static $autoLoadNamespaces = ['Components'];
+    private static $autoLoadNamespaces = ['Interfaces', 'Components'];
 
-    public static function loadClass($class)
+    public static function load($file)
     {
-        $classContext = explode('\\', $class);
-        $classPath = implode(DIRECTORY_SEPARATOR, $classContext);
-        $className = end($classContext);
+        $fileContext = explode('\\', $file);
+        $filePath = implode(DIRECTORY_SEPARATOR, $fileContext);
+        $fileName = end($fileContext);
 
-        if (in_array($classContext[0], self::$autoLoadNamespaces)) {
+        if (in_array($fileContext[0], self::$autoLoadNamespaces)) {
             switch (true) {
-                case $classContext[0] === 'Components':
-                    $file = 'Classes' . DIRECTORY_SEPARATOR . 'Html' . DIRECTORY_SEPARATOR . $classPath . '.php';
-                    if (file_exists($file)) {
-                        include $file;
-                        class_alias('lightframe\\Html\\' . $class, $class);
+                case $fileContext[0] === 'Interfaces':
+                    $effectiveFile = $filePath . '.php';
+                    if (file_exists($effectiveFile)) {
+                        include $effectiveFile;
+                        class_alias('lightframe\\' . $file, $file);
                     }
                     break;
-            }    
+                case $fileContext[0] === 'Components':
+                    $effectiveFile = 'Classes' . DIRECTORY_SEPARATOR . 'Html' . DIRECTORY_SEPARATOR . $filePath . '.php';
+                    if (file_exists($effectiveFile)) {
+                        include $effectiveFile;
+                        class_alias('lightframe\\Html\\' . $file, $file);
+                    }
+                    break;
+            }
         }
     }
 }

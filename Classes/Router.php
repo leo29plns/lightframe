@@ -13,6 +13,7 @@ class Router
     public static $uri;
     public static $locale;
     public static $method;
+    public static $headers;
 
     private static function loadRoutes() : void
     {
@@ -59,7 +60,7 @@ class Router
         }
     }
 
-    public static function loadRouteController(string $requestUri, string $requestMethod) : void
+    public static function loadRouteController(string $requestUri, string $requestMethod, array $headers) : void
     {
         $requestUri = parse_url($requestUri, PHP_URL_PATH);
 
@@ -73,6 +74,8 @@ class Router
 
         $uri = (self::$webroot !== '/') ? substr($requestUri, strlen(self::$webroot)) : $requestUri;
         self::$method = $requestMethod;
+
+        self::$headers = array_change_key_case($headers, CASE_UPPER);
 
         $parts = explode('/', trim($uri, '/'));
 
@@ -94,6 +97,12 @@ class Router
             self::$locale = $locale;
             $_SESSION['LF_LOCALE'] = self::$locale;
             self::$uri = substr($uri, strlen(self::$locale) + 1);
+
+            if (self::$method === 'POST') {
+                if (!isset($_POST[\LF_PREFIX . '_TOKEN']) || !Token::verify($_POST[\LF_PREFIX . '_TOKEN'])) {
+                    \LfError::exit('token', 'invalid_token', 403);
+                }
+            }
         } else {
             if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
                 $locale = substr(explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE'])[0], 0, 2);
@@ -104,21 +113,36 @@ class Router
             \Redirect::url($urlWithLocale);
         }
 
-        $reconciliation = self::controllerReconciliation();
+        if (isset(self::$headers[\LF_PREFIX . '_TOKEN'])) {
+            if (!Token::verify(self::$headers[\LF_PREFIX . '_TOKEN'])) {
+                \LfError::exit('token', 'invalid_token', 403);
+            }
+        }
 
-        if (!is_null($reconciliation)) {
-            $route = self::$routes[$reconciliation['index']];
-            $params = $reconciliation['params'];
+        if (isset($_GET[\LF_PREFIX . '_ASYNCHTML'], self::$headers[\LF_PREFIX . '_TOKEN'])) {
+            $params = $_GET;
+            unset($params[\LF_PREFIX . '_ASYNCHTML']);
 
-            $controller = explode('->', $route['controller']);
-            $controllerPath = str_replace('\\', DIRECTORY_SEPARATOR, $controller[0]);
-
-            self::loadController($controllerPath . '.php', self::CLASS_ALIAS . $controller[0]);
-            
-            $controllerInstance = new (self::CLASS_ALIAS . $controller[0]);
-            call_user_func([$controllerInstance, $controller[1]], $params);
+            header('LF_TOKEN: ' . $_SESSION['LF_TOKEN']);
+            $htmlAsync = new \Html\Async;
+            echo $htmlAsync->renderComponent($_GET[\LF_PREFIX . '_ASYNCHTML'], $params);
         } else {
-            \LfError::exit('page', 'not_found', 404);
+            $reconciliation = self::controllerReconciliation();
+
+            if (!is_null($reconciliation)) {
+                $route = self::$routes[$reconciliation['index']];
+                $params = $reconciliation['params'];
+
+                $controller = explode('->', $route['controller']);
+                $controllerPath = str_replace('\\', DIRECTORY_SEPARATOR, $controller[0]);
+
+                self::loadController($controllerPath . '.php', self::CLASS_ALIAS . $controller[0]);
+                
+                $controllerInstance = new (self::CLASS_ALIAS . $controller[0])();
+                call_user_func([$controllerInstance, $controller[1]], $params);
+            } else {
+                \LfError::exit('page', 'not_found', 404);
+            }
         }
     }
 }

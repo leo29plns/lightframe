@@ -12,9 +12,14 @@ class View
     private $jsFiles = [];
     private $phpToJsHtml;
 
+    private $asyncHtml;
+
     public function __construct(string $viewPath)
     {
         $this->viewPath = 'html' . DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR . $viewPath;
+
+        $this->asyncHtml = new \Html\Async;
+        $this->asyncHtml->unregisterAll();
     }
 
     public function setTitle(string $title) : void
@@ -51,6 +56,10 @@ class View
         require($this->viewPath);
         $html = ob_get_clean();
 
+        if ($this->asyncHtml->isRegisterUsed()) {
+            $this->phpToJs('lf_token', $_SESSION['LF_TOKEN']);
+        }
+
         if ($this->pageTitle) {
             $template['head']['LF_TITLE'] = $this->pageTitle;
         }
@@ -71,23 +80,31 @@ class View
         $headHtmlTemplate = new \Template('lf' . DIRECTORY_SEPARATOR . 'head.php', $template['head']);
         $bodyHtmlTemplate = new \Template('lf' . DIRECTORY_SEPARATOR . 'footer.php', $template['footer']);
 
-        $parser = new \Parser($html);
-        $parser->bind($translation[0]['body']);
-        $html = $parser->parse();
+        if (isset($translation[0]['body'])) {
+            $parser = new \Parser($html);
+            $parser->bind($translation[0]['body']);
+            $html = $parser->parse();
+        }
 
-        $fallBackparser = new \Parser($html);
-        $fallBackparser->bind($translation[1]['body']);
-        $html = $fallBackparser->parse();
+        if (isset($translation[1]['body'])) {
+            $fallBackparser = new \Parser($html);
+            $fallBackparser->bind($translation[1]['body']);
+            $html = $fallBackparser->parse();
+        }
 
         $headHtml = $headHtmlTemplate->render();
 
-        $headParser = new \Parser($headHtml);
-        $headParser->bind($translation[0]['head']);
-        $headHtml = $headParser->parse();
+        if (isset($translation[0]['head'])) {
+            $headParser = new \Parser($headHtml);
+            $headParser->bind($translation[0]['head']);
+            $headHtml = $headParser->parse();
+        }
 
-        $fallBackHeadParser = new \Parser($headHtml);
-        $fallBackHeadParser->bind($translation[1]['head']);
-        $headHtml = $fallBackHeadParser->parse();
+        if (isset($translation[1]['head'])) {
+            $fallBackHeadParser = new \Parser($headHtml);
+            $fallBackHeadParser->bind($translation[1]['head']);
+            $headHtml = $fallBackHeadParser->parse();
+        }
 
         $bodyHtml = $bodyHtmlTemplate->render();
 
